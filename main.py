@@ -40,4 +40,4 @@ def run():
 
         except Exception as e:
             send(CHAT_ID, f"ERROR: {e}")
-          def run():
+
