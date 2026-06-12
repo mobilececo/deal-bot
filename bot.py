@@ -1,6 +1,6 @@
 import requests
 
-TOKEN = "7756549139:AAHiBgFspGrKGbbnir0tNPx6DtGM_baRjX0"
+TOKEN = "8755949106:AAFSBlPuPKkUj0y2n-T-R7WvfqB9pCwNLw0"
 
 def send(chat_id, msg):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
