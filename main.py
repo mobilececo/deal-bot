@@ -41,8 +41,11 @@ def run():
         except Exception as e:
             send(CHAT_ID, f"ERROR: {e}")
           def run():
-    print("bot çalışıyor")
+print("FILE STARTED")
 
+def run():
+    print("RUN CALLED")
 
 if __name__ == "__main__":
+    print("ENTRYPOINT OK")
     run()
