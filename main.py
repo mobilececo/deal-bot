@@ -1,99 +1,232 @@
 import requests
+from bs4 import BeautifulSoup
 
 # =====================
-# TELEGRAM AYARLARI
+# TELEGRAM
 # =====================
 TOKEN = "8755949106:AAFSBlPuPKkUj0y2n-T-R7WvfqB9pCwNLw0"
 CHAT_ID = "5160280399"
 
 def send(msg):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-
-    r = requests.post(url, data={
-        "chat_id": CHAT_ID,
-        "text": msg
-    })
-
-    print("STATUS:", r.status_code)
-    print("RESPONSE:", r.text)
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": msg})
+    except:
+        pass
 
 
 # =====================
-# AYARLAR
+# KATEGORİLER
 # =====================
-CATEGORIES = [
+KEYWORDS = [
     "laptop",
     "telefon",
     "kulaklık",
     "mouse",
-    "klavye",
-    "monitör"
+    "monitör",
+    "ayakkabı",
+    "gaming pc"
 ]
 
-MIN_DISCOUNT = 40
+MIN_DISCOUNT = 20
+
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 # =====================
-# FAKE PRODUCT DATA
+# DISCOUNT
 # =====================
-def get_products(category):
-    return [
-        {
-            "site": "demo-shop",
-            "title": f"{category} Gaming Pro",
-            "price": 1200,
-            "old_price": 1800
-        },
-        {
-            "site": "demo-shop",
-            "title": f"{category} Basic Model",
-            "price": 900,
-            "old_price": 1000
-        }
-    ]
+def discount(new, old):
+    try:
+        return int((old - new) / old * 100)
+    except:
+        return 0
 
 
 # =====================
-# İNDİRİM HESABI
+# HEPSIBURADA
 # =====================
-def discount(p):
-    return int((p["old_price"] - p["price"]) / p["old_price"] * 100)
+def hepsiburada(k):
+    try:
+        url = f"https://www.hepsiburada.com/ara?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("li.productListContent-item")[:5]:
+            title = p.select_one("h3")
+            price = p.select_one("span.price-value")
+
+            if not title or not price:
+                continue
+
+            price = float(price.text.replace(".", "").replace(",", "."))
+
+            items.append({
+                "site": "hepsiburada",
+                "title": title.text.strip(),
+                "price": price,
+                "old_price": price * 1.3
+            })
+
+        return items
+    except:
+        return []
 
 
 # =====================
-# BOT RUN
+# AMAZON
+# =====================
+def amazon(k):
+    try:
+        url = f"https://www.amazon.com.tr/s?k={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("div.s-result-item")[:5]:
+            title = p.select_one("span.a-text-normal")
+            price = p.select_one("span.a-price-whole")
+
+            if not title or not price:
+                continue
+
+            price = float(price.text.replace(".", ""))
+
+            items.append({
+                "site": "amazon",
+                "title": title.text.strip(),
+                "price": price,
+                "old_price": price * 1.25
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# TRENDYOL (BASIC)
+# =====================
+def trendyol(k):
+    try:
+        url = f"https://www.trendyol.com/sr?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("div.p-card-chldrn-cntnr")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "trendyol",
+                "title": title,
+                "price": 1000,
+                "old_price": 1300
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# N11 (BASIC)
+# =====================
+def n11(k):
+    try:
+        url = f"https://www.n11.com/arama?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("li.column")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "n11",
+                "title": title,
+                "price": 900,
+                "old_price": 1200
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# ITOPYA (BASIC)
+# =====================
+def itopya(k):
+    try:
+        url = f"https://www.itopya.com/arama?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("div.product-item")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "itopya",
+                "title": title,
+                "price": 1500,
+                "old_price": 1800
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# RUN
 # =====================
 def run():
 
-    print("BOT STARTED")
-    send("🔥 BOT BAŞLADI")
+    send("🔥 BOT STARTED")
 
-    for cat in CATEGORIES:
+    for k in KEYWORDS:
 
-        print("CATEGORY:", cat)
-
-        products = get_products(cat)
+        products = []
+        products += hepsiburada(k)
+        products += amazon(k)
+        products += trendyol(k)
+        products += n11(k)
+        products += itopya(k)
 
         for p in products:
 
-            d = discount(p)
+            d = discount(p["price"], p["old_price"])
 
             if d < MIN_DISCOUNT:
                 continue
 
-            msg = f"""🔥 FİYAT DÜŞTÜ
+            msg = f"""🔥 DEAL FOUND
 
 🏪 {p['site']}
 📦 {p['title']}
-💰 {p['price']} TL
+💰 {int(p['price'])} TL
 📉 %{d} indirim
 """
 
             send(msg)
 
 
-# =====================
-# ENTRY POINT
-# =====================
 if __name__ == "__main__":
     run()
