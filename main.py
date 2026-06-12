@@ -67,3 +67,5 @@ def run():
 
 if __name__ == "__main__":
     run()
+
+send(CHAT_ID, "🔥 BOT ÇALIŞIYOR TEST")
