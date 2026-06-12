@@ -2,7 +2,7 @@ import hashlib
 from parsers import hepsiburada, trendyol, amazon, n11, itopya
 from bot import send
 
-CHAT_ID = "7756549139"  # 👈 kendi Telegram user ID
+CHAT_ID = "5160280399"  # 👈 kendi Telegram user ID
 
 # 🔁 bellekte duplicate engel
 seen = set()
@@ -70,6 +70,6 @@ if __name__ == "__main__":
 
 from bot import send
 
-CHAT_ID = "7756549139"
+CHAT_ID = "5160280399"
 
 send(CHAT_ID, "🔥 BOT ÇALIŞIYOR TEST MESAJI")
