@@ -1,11 +1,7 @@
-import hashlib
-from parsers import hepsiburada, trendyol, amazon, n11, itopya
 from bot import send
+from parsers import hepsiburada, trendyol, amazon, n11, itopya
 
-CHAT_ID = "5160280399"  # 👈 kendi Telegram user ID
-
-# 🔁 bellekte duplicate engel
-seen = set()
+CHAT_ID = "5160280399"
 
 CATEGORIES = [
     "laptop",
@@ -18,33 +14,9 @@ CATEGORIES = [
     "elektrikli mutfak",
     "gaming pc"
 ]
-
-
-def make_id(text, site):
-    return hashlib.md5((text + site).encode()).hexdigest()
-
-
-def process(products):
-    for p in products:
-
-        pid = make_id(p["title"], p["site"])
-
-        if pid in seen:
-            continue
-
-        seen.add(pid)
-
-        msg = f"""🔥 DEAL FOUND
-
-🏪 {p['site']}
-📦 {p['title'][:100]}
-💰 {p['price']} TL
-"""
-
-        send(CHAT_ID, msg)
-
-
 def run():
+
+    send(CHAT_ID, "🔥 BOT BAŞLADI")
 
     for cat in CATEGORIES:
 
@@ -55,21 +27,19 @@ def run():
             n1 = n11.parse(cat)
             it = itopya.parse(cat)
 
-            process(hb)
-            process(tr)
-            process(am)
-            process(n1)
-            process(it)
+            for product in hb + tr + am + n1 + it:
+
+                msg = f"""🔥 DEAL
+
+🏪 {product['site']}
+📦 {product['title']}
+💰 {product['price']} TL
+"""
+
+                send(CHAT_ID, msg)
 
         except Exception as e:
-            print("ERROR:", e)
-
-
-if __name__ == "__main__":
+            send(CHAT_ID, f"ERROR: {e}")
+            if __name__ == "__main__":
     run()
-
-from bot import send
-
-CHAT_ID = "5160280399"
-
-send(CHAT_ID, "🔥 BOT ÇALIŞIYOR TEST MESAJI")
+    
