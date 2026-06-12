@@ -1,56 +1,68 @@
-from parsers import hepsiburada, trendyol, amazon, n11, itopya,
-from db import get_price, save
+import hashlib
+from parsers import hepsiburada, trendyol, amazon, n11, itopya
 from bot import send
 
-CHAT_ID = "5160280399"
+CHAT_ID = "5160280399"  # 👈 kendi Telegram user ID
 
-CATEGORIES = ["laptop", "telefon", "kulaklık", "monitör" "mouse" "klavye" "ayakkabı" "gaming pc"]
+# 🔁 bellekte duplicate engel
+seen = set()
+
+CATEGORIES = [
+    "laptop",
+    "telefon",
+    "kulaklık",
+    "mouse",
+    "klavye",
+    "monitör",
+    "ayakkabı",
+    "elektrikli mutfak",
+    "gaming pc"
+]
+
+
+def make_id(text, site):
+    return hashlib.md5((text + site).encode()).hexdigest()
 
 
 def process(products):
     for p in products:
 
-        old_price = get_price(p["id"])
+        pid = make_id(p["title"], p["site"])
 
-        # ilk kez görülüyorsa kaydet
-        if old_price is None:
-            save(p["id"], p["title"], p["price"], p["site"])
+        if pid in seen:
             continue
 
-        # fiyat düştüyse
-        if p["price"] < old_price:
+        seen.add(pid)
 
-            drop = int(((old_price - p["price"]) / old_price) * 100)
-
-            send(CHAT_ID, f"""
-🔥 FİYAT DÜŞTÜ!
+        msg = f"""🔥 DEAL FOUND
 
 🏪 {p['site']}
-🛒 {p['title']}
-💰 Eski: {old_price}
-💸 Yeni: {p['price']}
-📉 %{drop}
-""")
+📦 {p['title'][:100]}
+💰 {p['price']} TL
+"""
 
-
-        save(p["id"], p["title"], p["price"], p["site"])
+        send(CHAT_ID, msg)
 
 
 def run():
 
     for cat in CATEGORIES:
 
-        hb = hepsiburada.parse(cat)
-        tr = trendyol.parse(cat)
-        am = amazon.parse(cat)
-        n1 = n11.parse(cat)
-        it = itopya.parse(cat)
+        try:
+            hb = hepsiburada.parse(cat)
+            tr = trendyol.parse(cat)
+            am = amazon.parse(cat)
+            n1 = n11.parse(cat)
+            it = itopya.parse(cat)
 
-        process(hb)
-        process(tr)
-        process(am)
-        process(n1)
-        process(it)
+            process(hb)
+            process(tr)
+            process(am)
+            process(n1)
+            process(it)
+
+        except Exception as e:
+            print("ERROR:", e)
 
 
 if __name__ == "__main__":
