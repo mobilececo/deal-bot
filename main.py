@@ -40,5 +40,9 @@ def run():
 
         except Exception as e:
             send(CHAT_ID, f"ERROR: {e}")
-           if __name__ == "__main__":
+          def run():
+    print("bot çalışıyor")
+
+
+if __name__ == "__main__":
     run()
