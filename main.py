@@ -1,43 +1,15 @@
 from bot import send
-from parsers import hepsiburada, trendyol, amazon, n11, itopya
 
 CHAT_ID = "5160280399"
 
-CATEGORIES = [
-    "laptop",
-    "telefon",
-    "kulaklık",
-    "mouse",
-    "klavye",
-    "monitör",
-    "ayakkabı",
-    "elektrikli mutfak",
-    "gaming pc"
-]
 def run():
+    print("BOT STARTED")
 
-    send(CHAT_ID, "🔥 BOT BAŞLADI")
+    send(CHAT_ID, "🔥 BOT ÇALIŞTI")
 
-    for cat in CATEGORIES:
+    for i in range(3):
+        send(CHAT_ID, f"test mesaj {i}")
 
-        try:
-            hb = hepsiburada.parse(cat)
-            tr = trendyol.parse(cat)
-            am = amazon.parse(cat)
-            n1 = n11.parse(cat)
-            it = itopya.parse(cat)
 
-            for product in hb + tr + am + n1 + it:
-
-                msg = f"""🔥 DEAL
-
-🏪 {product['site']}
-📦 {product['title']}
-💰 {product['price']} TL
-"""
-
-                send(CHAT_ID, msg)
-
-        except Exception as e:
-            send(CHAT_ID, f"ERROR: {e}")
-
+if __name__ == "__main__":
+    run()
