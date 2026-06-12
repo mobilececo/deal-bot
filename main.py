@@ -68,4 +68,8 @@ def run():
 if __name__ == "__main__":
     run()
 
-send(CHAT_ID, "🔥 BOT ÇALIŞIYOR TEST")
+from bot import send
+
+CHAT_ID = "5160280399"
+
+send(CHAT_ID, "🔥 BOT ÇALIŞIYOR TEST MESAJI")
