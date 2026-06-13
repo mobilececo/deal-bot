@@ -1,159 +1,183 @@
 import requests
 from bs4 import BeautifulSoup
 
-TOKEN = "8755949106:AAFSBlPuPKkUj0y2n-T-R7WvfqB9pCwNLw0"
-CHAT_ID = "5160280399"
-
-KEYWORDS = [
-    "laptop",
-    "telefon",
-    "kulaklık",
-    "mouse",
-    "monitör",
-    "ayakkabı",
-    "gaming pc"
-]
-
 HEADERS = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36"
 }
 
-MIN_DISCOUNT = 20
+# ----------------------------
+# KATEGORİLER
+# ----------------------------
+CATEGORIES = {
+    "ayakkabi": "koşu ayakkabı",
+    "telefon": "akıllı telefon",
+    "laptop": "laptop",
+    "monitör": "monitör",
+    "kulaklik": "bluetooth kulaklık",
+    "mouse": "gaming mouse"
+}
+
+# ----------------------------
+# TRENDYOL
+# ----------------------------
+def trendyol(q):
+    url = f"https://www.trendyol.com/sr?q={q}"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    items = soup.select("div.p-card-wrppr")
+    res = []
+
+    for i in items[:8]:
+        try:
+            title = i.select_one("span.prdct-desc-cntnr-name").text.strip()
+            price = i.select_one("div.prc-box-dscntd").text.strip()
+            link = "https://www.trendyol.com" + i.a["href"]
+            res.append(("Trendyol", title, price, link))
+        except:
+            continue
+
+    return res
 
 
-def send(msg):
-    try:
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            data={
-                "chat_id": CHAT_ID,
-                "text": msg[:4000]
-            },
-            timeout=15
-        )
-    except Exception as e:
-        print("Telegram hata:", e)
+# ----------------------------
+# HEPSIBURADA
+# ----------------------------
+def hepsiburada(q):
+    url = f"https://www.hepsiburada.com/ara?q={q}"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    items = soup.select("li.productListContent-item")
+    res = []
+
+    for i in items[:8]:
+        try:
+            title = i.select_one("h3").text.strip()
+            price = i.select_one("div.price-value").text.strip()
+            link = "https://www.hepsiburada.com" + i.a["href"]
+            res.append(("Hepsiburada", title, price, link))
+        except:
+            continue
+
+    return res
 
 
-def discount(new_price, old_price):
-    try:
-        return int((old_price - new_price) / old_price * 100)
-    except:
-        return 0
+# ----------------------------
+# N11
+# ----------------------------
+def n11(q):
+    url = f"https://www.n11.com/arama?q={q}"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    items = soup.select("li.column")
+    res = []
+
+    for i in items[:6]:
+        try:
+            title = i.select_one("h3").text.strip()
+            price = i.select_one(".newPrice ins").text.strip()
+            link = i.a["href"]
+            res.append(("n11", title, price, link))
+        except:
+            continue
+
+    return res
 
 
-def hepsiburada(keyword):
-    try:
-        url = f"https://www.hepsiburada.com/ara?q={keyword}"
-        r = requests.get(url, headers=HEADERS, timeout=15)
-        print("STATUS:", r.status_code)
-print("URL:", r.url)
-print(r.text[:500])
+# ----------------------------
+# ITOPYA
+# ----------------------------
+def itopya(q):
+    url = f"https://www.itopya.com/arama?q={q}"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-        print("HB:", keyword, r.status_code)
+    items = soup.select("div.product-item")
+    res = []
 
-        soup = BeautifulSoup(r.text, "html.parser")
+    for i in items[:6]:
+        try:
+            title = i.select_one("a").get("title")
+            price = i.select_one(".price").text.strip()
+            link = "https://www.itopya.com" + i.a["href"]
+            res.append(("İtopya", title, price, link))
+        except:
+            continue
 
-        items = []
+    return res
 
-        for p in soup.select("li")[:20]:
 
-            text = p.get_text(" ", strip=True)
+# ----------------------------
+# AMAZON (çoğu zaman sınırlı)
+# ----------------------------
+def amazon(q):
+    url = f"https://www.amazon.com.tr/s?k={q}"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-            if len(text) < 20:
+    items = soup.select("div.s-result-item")
+    res = []
+
+    for i in items[:5]:
+        try:
+            title = i.select_one("h2 span")
+            price = i.select_one(".a-price-whole")
+            link = i.select_one("a.a-link-normal")
+
+            if not title or not price or not link:
                 continue
 
-            items.append({
-                "site": "Hepsiburada",
-                "title": text[:120],
-                "price": 1000,
-                "old_price": 1300
-            })
+            res.append((
+                "Amazon",
+                title.text.strip(),
+                price.text.strip(),
+                "https://www.amazon.com.tr" + link["href"]
+            ))
+        except:
+            continue
 
-        return items[:5]
-
-    except Exception as e:
-        print("HB HATA:", e)
-        return []
+    return res
 
 
-def amazon(keyword):
-    try:
-        url = f"https://www.amazon.com.tr/s?k={keyword}"
-        r = requests.get(url, headers=HEADERS, timeout=15)
+# ----------------------------
+# ANA ARAMA
+# ----------------------------
+def search(category_key):
+    if category_key not in CATEGORIES:
+        print("❌ Geçersiz kategori")
+        return
 
-        print("AMAZON:", keyword, r.status_code)
+    query = CATEGORIES[category_key]
 
-        soup = BeautifulSoup(r.text, "html.parser")
+    print(f"\n🔎 Arama: {query}\n")
 
-        items = []
+    all_results = []
 
-        for p in soup.select("div.s-result-item")[:10]:
+    for fn in [trendyol, hepsiburada, n11, itopya, amazon]:
+        try:
+            all_results += fn(query)
+        except Exception as e:
+            print(f"⚠️ Hata ({fn.__name__}): {e}")
 
-            title = p.get_text(" ", strip=True)
+    if not all_results:
+        print("❌ Ürün bulunamadı (site engeli olabilir)")
+        return
 
-            if len(title) < 20:
-                continue
-
-            items.append({
-                "site": "Amazon",
-                "title": title[:120],
-                "price": 1000,
-                "old_price": 1300
-            })
-
-        return items
-
-    except Exception as e:
-        print("AMAZON HATA:", e)
-        return []
+    for i, (site, title, price, link) in enumerate(all_results, 1):
+        print(f"{i}. [{site}] {title}")
+        print(f"   💰 {price}")
+        print(f"   🔗 {link}\n")
 
 
-def trendyol(keyword):
-    return []
-
-
-def n11(keyword):
-    return []
-
-
-def itopya(keyword):
-    return []
-
-
-def run():
-
-    send("🔥 BOT BAŞLADI")
-
-    for keyword in KEYWORDS:
-
-        products = []
-
-        products += hepsiburada(keyword)
-        products += amazon(keyword)
-        products += trendyol(keyword)
-        products += n11(keyword)
-        products += itopya(keyword)
-
-        send(f"🔍 {keyword}: {len(products)} ürün bulundu")
-
-        for p in products:
-
-            d = discount(p["price"], p["old_price"])
-
-            if d < MIN_DISCOUNT:
-                continue
-
-            msg = (
-                f"🔥 DEAL FOUND\n\n"
-                f"🏪 {p['site']}\n"
-                f"📦 {p['title']}\n"
-                f"💰 {p['price']} TL\n"
-                f"📉 %{d} indirim"
-            )
-
-            send(msg)
-
-
+# ----------------------------
+# RUN
+# ----------------------------
 if __name__ == "__main__":
-    run()
+    print("📦 Kategoriler:")
+    for k in CATEGORIES:
+        print("-", k)
+
+    cat = input("\nKategori seç: ").strip().lower()
+    search(cat)
