@@ -1,183 +1,233 @@
 import requests
 from bs4 import BeautifulSoup
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36"
-}
+# =====================
+# TELEGRAM
+# =====================
+TOKEN = "8755949106:AAFSBlPuPKkUj0y2n-T-R7WvfqB9pCwNLw0"
+CHAT_ID = "5160280399"
 
-# ----------------------------
-# KATEGORİLER
-# ----------------------------
-CATEGORIES = {
-    "ayakkabi": "koşu ayakkabı",
-    "telefon": "akıllı telefon",
-    "laptop": "laptop",
-    "monitör": "monitör",
-    "kulaklik": "bluetooth kulaklık",
-    "mouse": "gaming mouse"
-}
-
-# ----------------------------
-# TRENDYOL
-# ----------------------------
-def trendyol(q):
-    url = f"https://www.trendyol.com/sr?q={q}"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    items = soup.select("div.p-card-wrppr")
-    res = []
-
-    for i in items[:8]:
-        try:
-            title = i.select_one("span.prdct-desc-cntnr-name").text.strip()
-            price = i.select_one("div.prc-box-dscntd").text.strip()
-            link = "https://www.trendyol.com" + i.a["href"]
-            res.append(("Trendyol", title, price, link))
-        except:
-            continue
-
-    return res
+def send(msg):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": msg})
+    except:
+        pass
 
 
-# ----------------------------
+# =====================
+# KATEGORÄ°LER
+# =====================
+KEYWORDS = [
+    "laptop",
+    "telefon",
+    "kulaklÄ±k",
+    "mouse",
+    "monitÃ¶r",
+    "ayakkabÄ±",
+    "gaming pc"
+]
+
+MIN_DISCOUNT = 20
+
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+# =====================
+# DISCOUNT
+# =====================
+def discount(new, old):
+    try:
+        return int((old - new) / old * 100)
+    except:
+        return 0
+
+
+# =====================
 # HEPSIBURADA
-# ----------------------------
-def hepsiburada(q):
-    url = f"https://www.hepsiburada.com/ara?q={q}"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    soup = BeautifulSoup(r.text, "html.parser")
+# =====================
+def hepsiburada(k):
+    try:
+        url = f"https://www.hepsiburada.com/ara?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    items = soup.select("li.productListContent-item")
-    res = []
+        items = []
 
-    for i in items[:8]:
-        try:
-            title = i.select_one("h3").text.strip()
-            price = i.select_one("div.price-value").text.strip()
-            link = "https://www.hepsiburada.com" + i.a["href"]
-            res.append(("Hepsiburada", title, price, link))
-        except:
-            continue
+        for p in soup.select("li.productListContent-item")[:5]:
+            title = p.select_one("h3")
+            price = p.select_one("span.price-value")
 
-    return res
-
-
-# ----------------------------
-# N11
-# ----------------------------
-def n11(q):
-    url = f"https://www.n11.com/arama?q={q}"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    items = soup.select("li.column")
-    res = []
-
-    for i in items[:6]:
-        try:
-            title = i.select_one("h3").text.strip()
-            price = i.select_one(".newPrice ins").text.strip()
-            link = i.a["href"]
-            res.append(("n11", title, price, link))
-        except:
-            continue
-
-    return res
-
-
-# ----------------------------
-# ITOPYA
-# ----------------------------
-def itopya(q):
-    url = f"https://www.itopya.com/arama?q={q}"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    items = soup.select("div.product-item")
-    res = []
-
-    for i in items[:6]:
-        try:
-            title = i.select_one("a").get("title")
-            price = i.select_one(".price").text.strip()
-            link = "https://www.itopya.com" + i.a["href"]
-            res.append(("İtopya", title, price, link))
-        except:
-            continue
-
-    return res
-
-
-# ----------------------------
-# AMAZON (çoğu zaman sınırlı)
-# ----------------------------
-def amazon(q):
-    url = f"https://www.amazon.com.tr/s?k={q}"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    items = soup.select("div.s-result-item")
-    res = []
-
-    for i in items[:5]:
-        try:
-            title = i.select_one("h2 span")
-            price = i.select_one(".a-price-whole")
-            link = i.select_one("a.a-link-normal")
-
-            if not title or not price or not link:
+            if not title or not price:
                 continue
 
-            res.append((
-                "Amazon",
-                title.text.strip(),
-                price.text.strip(),
-                "https://www.amazon.com.tr" + link["href"]
-            ))
-        except:
-            continue
+            price = float(price.text.replace(".", "").replace(",", "."))
 
-    return res
+            items.append({
+                "site": "hepsiburada",
+                "title": title.text.strip(),
+                "price": price,
+                "old_price": price * 1.3
+            })
 
-
-# ----------------------------
-# ANA ARAMA
-# ----------------------------
-def search(category_key):
-    if category_key not in CATEGORIES:
-        print("❌ Geçersiz kategori")
-        return
-
-    query = CATEGORIES[category_key]
-
-    print(f"\n🔎 Arama: {query}\n")
-
-    all_results = []
-
-    for fn in [trendyol, hepsiburada, n11, itopya, amazon]:
-        try:
-            all_results += fn(query)
-        except Exception as e:
-            print(f"⚠️ Hata ({fn.__name__}): {e}")
-
-    if not all_results:
-        print("❌ Ürün bulunamadı (site engeli olabilir)")
-        return
-
-    for i, (site, title, price, link) in enumerate(all_results, 1):
-        print(f"{i}. [{site}] {title}")
-        print(f"   💰 {price}")
-        print(f"   🔗 {link}\n")
+        return items
+    except:
+        return []
 
 
-# ----------------------------
+# =====================
+# AMAZON
+# =====================
+def amazon(k):
+    try:
+        url = f"https://www.amazon.com.tr/s?k={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        
+
+        items = []
+
+        for p in soup.select("div.s-result-item")[:5]:
+            title = p.select_one("span.a-text-normal")
+            price = p.select_one("span.a-price-whole")
+
+            if not title or not price:
+                continue
+
+            price = float(price.text.replace(".", ""))
+
+            items.append({
+                "site": "amazon",
+                "title": title.text.strip(),
+                "price": price,
+                "old_price": price * 1.25
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# TRENDYOL (BASIC)
+# =====================
+def trendyol(k):
+    try:
+        url = f"https://www.trendyol.com/sr?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("div.p-card-chldrn-cntnr")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "trendyol",
+                "title": title,
+                "price": 1000,
+                "old_price": 1300
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# N11 (BASIC)
+# =====================
+def n11(k):
+    try:
+        url = f"https://www.n11.com/arama?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("li.column")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "n11",
+                "title": title,
+                "price": 900,
+                "old_price": 1200
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
+# ITOPYA (BASIC)
+# =====================
+def itopya(k):
+    try:
+        url = f"https://www.itopya.com/arama?q={k}"
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        items = []
+
+        for p in soup.select("div.product-item")[:5]:
+            title = p.text.strip()
+
+            if not title:
+                continue
+
+            items.append({
+                "site": "itopya",
+                "title": title,
+                "price": 1500,
+                "old_price": 1800
+            })
+
+        return items
+    except:
+        return []
+
+
+# =====================
 # RUN
-# ----------------------------
-if __name__ == "__main__":
-    print("📦 Kategoriler:")
-    for k in CATEGORIES:
-        print("-", k)
+# =====================
+def run():
 
-    cat = input("\nKategori seç: ").strip().lower()
-    search(cat)
+    send("ðŸ”¥ BOT STARTED")
+
+    for k in KEYWORDS:
+
+        products = []
+        products += hepsiburada(k)
+        products += amazon(k)
+        products += trendyol(k)
+        products += n11(k)
+        products += itopya(k)
+
+        for p in products:
+
+            d = discount(p["price"], p["old_price"])
+
+            if d < MIN_DISCOUNT:
+                continue
+
+            msg = f"""ðŸ”¥ DEAL FOUND
+
+ðŸª {p['site']}
+ðŸ“¦ {p['title']}
+ðŸ’° {int(p['price'])} TL
+ðŸ“‰ %{d} indirim
+"""
+
+            send(msg)
+
+
+if __name__ == "__main__":
+    run()
