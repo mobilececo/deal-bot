@@ -83,6 +83,37 @@ def amazon(k):
         url = f"https://www.amazon.com.tr/s?k={k}"
         r = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
+        def run():
+
+    send("🔥 BOT STARTED")
+
+    for k in KEYWORDS:
+
+        products = []
+        products += hepsiburada(k)
+        products += amazon(k)
+        products += trendyol(k)
+        products += n11(k)
+        products += itopya(k)
+
+        send(f"🔍 {k}: {len(products)} ürün bulundu")
+
+        for p in products:
+
+            d = discount(p["price"], p["old_price"])
+
+            if d < MIN_DISCOUNT:
+                continue
+
+            msg = f"""🔥 DEAL FOUND
+
+🏪 {p['site']}
+📦 {p['title']}
+💰 {int(p['price'])} TL
+📉 %{d} indirim
+"""
+
+            send(msg)
 
         items = []
 
