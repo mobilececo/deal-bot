@@ -46,6 +46,9 @@ def hepsiburada(keyword):
     try:
         url = f"https://www.hepsiburada.com/ara?q={keyword}"
         r = requests.get(url, headers=HEADERS, timeout=15)
+        print("STATUS:", r.status_code)
+print("URL:", r.url)
+print(r.text[:500])
 
         print("HB:", keyword, r.status_code)
 
